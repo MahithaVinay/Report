@@ -1,0 +1,273 @@
+---
+title: "Report on Acute Respiratory Infections for Children Under the Age of Five"
+format: html
+date: 25/04/2024
+author: Mahitha Vinay
+execute: 
+  echo: false
+  warning: false
+  message: false 
+---
+
+```{python,echo=FALSE}
+import pandas as pd
+import plotly.express as px
+import os
+import matplotlib.pyplot as plt
+from mpl_toolkits.basemap import Basemap
+import seaborn as sns
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+from matplotlib.colors import ListedColormap
+from sklearn.linear_model import LinearRegression
+import numpy as np
+from plotnine import ggplot, aes, geom_point, facet_wrap, labs, theme
+from plotnine.themes import theme_minimal
+import pycountry_convert as pc
+```
+
+Acute Respiratory Disease (ARD) encompasses a range of infectious and non-infectious respiratory illnesses affecting the upper and lower respiratory tract and poses a significant global health burden, particularly among vulnerable populations. This dashboard's objective is to examine the variables that most significantly affect acute respiratory illnesses in kids under the age of five. We will investigate the relationship between several factors and the incidence of acute respiratory infections by using a dataset that we obtained from the UNICEF website. Time period, country, and sex are the relevant factors. We will analyze the correlations between these variables and the observed percentage prevalence rates in our analysis.
+
+```{python,ECHO=FALSE}
+file_path = r'C:\Users\tejas\Downloads\unicef_indicator_2.csv'
+df = pd.read_csv(file_path)
+```
+
+```{python,ECHO=FALSE}
+import pandas as pd
+from plotnine import ggplot, aes, geom_point, stat_smooth, theme_bw, labs
+
+# Sample DataFrame 'df' is assumed to be available
+
+# Convert 'time_period' to datetime if it's not already in datetime format
+df['time_period'] = pd.to_datetime(df['time_period'])
+
+# Convert 'time_period' to numeric representation
+df['time_numeric'] = df['time_period'].astype('int64')
+
+# Define the plot using plotnine
+scatter_plot = (
+    ggplot(df, aes(x='time_numeric', y='obs_value')) +
+    geom_point(color='black') +
+    stat_smooth(method='lm', color='black', se=False) +
+    geom_point(data=df[df['obs_value'] > df['obs_value'].mean()], color='#FF5733') +
+    geom_point(data=df[df['obs_value'] <= df['obs_value'].mean()], color='#6CBB3C') +
+    theme_bw() +
+    labs(title='Observations Through Time', x='Time', y='Observation Value')
+)
+
+# Show the plot
+print(scatter_plot + theme(figure_size=(10, 6)))
+```
+
+This time series graph depicts trends in Acute Respiratory Infection (ARI) prevalence among children under five. The x-axis represents time, while the y-axis shows the percentage of ARD observations. The graph reveals diverse patterns. Some lines show a consistent increase in ARD observations over time, while others show a decrease. There are also lines with a fluctuating trend, indicating periods with higher and lower observations throughout the timeframe.
+
+```{python,ECHO=FALSE}
+# Function to get continent name from country name
+def get_continent(country_name):
+    try:
+        country_alpha2 = pc.country_name_to_country_alpha2(country_name)
+        continent_code = pc.country_alpha2_to_continent_code(country_alpha2)
+        continent_name = pc.convert_continent_code_to_continent_name(continent_code)
+        return continent_name
+    except:
+        return None
+
+# Sample DataFrame 'df' is assumed to be available
+
+# Convert 'time_period' to datetime if it's not already in datetime format
+df['time_period'] = pd.to_datetime(df['time_period'])
+
+# Convert 'time_period' to numeric representation
+df['time_numeric'] = df['time_period'].astype('int64')
+
+# Create a new column 'continent' by mapping countries to continents
+country_to_continent = {}
+for country in df['country'].unique():
+    continent = get_continent(country)
+    if continent:
+        country_to_continent[country] = continent
+
+df['continent'] = df['country'].map(country_to_continent)
+
+# Drop rows where continent is NaN
+df = df.dropna(subset=['continent'])
+
+# Define the plot using plotnine
+scatter_plot = (
+    ggplot(df, aes(x='time_numeric', y='obs_value', color='obs_value > obs_value.mean()')) +
+    geom_point() +
+    facet_wrap('~continent', labeller='label_both', ncol=2, scales='free_y') +  # Adjust ncol for the number of columns
+    theme_minimal() +
+    labs(x='Time', y='Observation Value') +  # Set axis labels for the entire plot
+    theme(figure_size=(10, 6))  # Adjust figure size
+)
+
+# Show the plot
+print(scatter_plot)
+```
+
+This graph displays the average observations of Acute Respiratory Diseases (ARD) in children under five across various years. The x-axis clearly shows time in years, though the specific range isn't provided in the graph itself. The y-axis represents the percentage of ARD observations, but again, the specific range of percentages is not displayed.
+
+Several lines appear on the graph, each representing the trend in ARD observations over time. We can confidently say that there's no single dominant trend for all the lines. Some lines show a clear upward trend, indicating increasing ARD observations over the years. Conversely, other lines display a downward trend, suggesting a decrease in ARD observations over time. There are also lines with a fluctuating pattern, with distinct peaks and valleys throughout the years.
+
+```{python,ECHO=FALSE}
+import pandas as pd
+from plotnine import ggplot, aes, geom_point, geom_smooth, theme_bw, labs, theme
+
+# Sample DataFrame 'df' is assumed to be available
+
+# Convert 'time_period' to datetime if it's not already in datetime format
+df['time_period'] = pd.to_datetime(df['time_period'])
+
+# Group by 'time_period' and calculate the average of 'obs_value'
+avg_obs_per_time = df.groupby('time_period')['obs_value'].mean().reset_index()
+
+# Convert 'time_period' to numeric representation
+avg_obs_per_time['time_numeric'] = avg_obs_per_time['time_period'].astype('int64')
+
+# Define the plot using plotnine
+scatter_plot = (
+    ggplot(avg_obs_per_time, aes(x='time_numeric', y='obs_value')) +
+    geom_point(color='black') +
+    geom_smooth(method='lm', color='black', se=False) +
+    theme_bw() +
+    labs(title='Average Observations Through Time', x='Time', y='Average Observation Value') +
+    theme(figure_size=(10, 6))  # Adjust the figure size here
+)
+
+# Show the plot
+print(scatter_plot)
+```
+
+This graph displays the distribution of average observations of acute respiratory diseases (ARD) in children under five years old across different countries. The x-axis represents the percentage of ARD observations, but the specific range of percentages isn't labeled on the graph. The y-axis shows the number of countries.
+
+The graph depicts a distribution with several peaks and valleys. There seems to be a concentration of countries with moderate ARD observations (around the center of the x-axis), with a tapering off towards both very high and very low ARD observations.
+
+```{python,ECHO=FALSE}
+import pandas as pd
+from plotnine import ggplot, aes, geom_bar, theme_bw, labs, theme
+
+# Load the data from the uploaded CSV file
+file_path = r'C:\Users\tejas\Downloads\unicef_indicator_2.csv'
+data = pd.read_csv(file_path)
+
+# Group by 'time_period' and 'sex', then calculate the average of 'obs_value'
+avg_obs_per_time_sex = data.groupby(['time_period', 'sex'])['obs_value'].mean().reset_index()
+
+# Define the plot using plotnine
+bar_plot = (
+    ggplot(avg_obs_per_time_sex, aes(x='time_period', y='obs_value', fill='sex')) +
+    geom_bar(stat='identity', position='dodge') +
+    theme_bw() +
+    labs(title='Average Observation Value by Time Period and Sex', x='Time Period', y='Average Observation Value', fill='Sex') +
+    theme(figure_size=(10, 6))  # Adjust the figure size here
+)
+
+# Show the plot
+print(bar_plot)
+```
+
+This graph displays the distribution of average observations of Acute Respiratory Infections (ARI) among children under five years old in various countries. The x-axis represents the percentage of ARD observations, but the specific range of percentages isn't shown on the graph. The y-axis shows the number of countries.
+
+The data reveals a non-uniform distribution of ARD observations across countries. There appears to be a peak around a certain percentage of ARD observations (we can't determine the exact value without the axis labels), suggesting a concentration of countries with a similar prevalence of ARD in children. The distribution then tapers off towards both ends of the x-axis, indicating a decline in the number of countries with very high or very low ARD observations.
+
+```{python,ECHO=FALSE}
+import pandas as pd
+from plotnine import ggplot, aes, geom_point, geom_smooth, theme_bw, labs, theme
+from sklearn.linear_model import LinearRegression
+
+# Load the data from the uploaded CSV file
+file_path = r'C:\Users\tejas\Downloads\unicef_indicator_2.csv'
+data = pd.read_csv(file_path)
+
+# Define the plot using plotnine
+scatter_plot = (
+    ggplot(data, aes(x='time_period', y='obs_value', color='sex')) +
+    geom_point() +
+    geom_smooth(method='lm', se=False, linetype='dashed') +
+    theme_bw() +
+    theme(figure_size=(10, 6)) +  # Adjust the figure size
+    labs(title='Observation Value by Sex and Time Period', x='Time Period', y='Observed Value', color='Sex')
+)
+
+# Show the plot
+print(scatter_plot)
+```
+
+Absolutely! Here's a description of the scatter plot you sent, focusing solely on the data presented in the image:
+
+This scatter plot depicts the relationship between two factors influencing Acute Respiratory Disease (ARD) in children under five. The x-axis represents one factor, likely a socioeconomic or environmental factor, but the specific variable isn't labeled in the graph. The y-axis represents the percentage of ARD observations.
+
+Several data points are scattered throughout the graph, indicating a variety of observations. It's difficult to discern a clear linear relationship between the two factors. Some data points show high ARD observations coinciding with high values on the x-axis, while others show high ARD observations at lower values on the x-axis. There seems to be a spread of data points across the entire range of both axes.
+
+```{python,ECHO=FALSE}
+# Load the data from the uploaded CSV file
+file_path = r'C:\Users\tejas\Downloads\unicef_indicator_2.csv'
+df = pd.read_csv(file_path)
+
+# Convert 'time_period' to datetime format
+df['time_period'] = pd.to_datetime(df['time_period'], format='%Y')
+
+# Clean the DataFrame
+df_cleaned = df[['country', 'time_period', 'obs_value']].copy()
+df_cleaned['obs_value'] = df_cleaned['obs_value'].astype(float)
+
+# Create choropleth map
+fig = px.choropleth(
+    df_cleaned,
+    locations='country',
+    locationmode='country names',
+    color='obs_value',
+    hover_name='country',
+    custom_data=['country'],  # Add custom data for country names
+    animation_frame=df_cleaned['time_period'].dt.year,  # Use only the year for animation
+    color_continuous_scale='Reds',  # Change the color scale to Reds
+    title='Percentage of children (under age 5) with acute respiratory infection symptoms'
+)
+fig.update_layout(
+    geo=dict(
+        showframe=False,
+        showcoastlines=False,
+        projection_type='natural earth'  # Use a different projection for the map
+    ),
+    coloraxis_colorbar=dict(
+        title='Observation Value',
+        tickvals=[0, 25, 50, 75, 100]  # Adjust tick values for colorbar
+    ),
+    title_x=0.5,
+    height=600,  # Increase the height of the graph
+    width=800,   # Increase the width of the graph
+    font=dict(
+        family="Arial, sans-serif",  # Change font family
+        size=12,                     # Adjust font size
+        color="black"                # Change font color
+    ),
+    plot_bgcolor='rgba(0,0,0,0)'    # Set plot background color to transparent
+)
+
+# Define hovertemplate to include country name and observation value
+fig.update_traces(hovertemplate='%{customdata[0]}<br>Observation Value: %{z}%')
+
+fig.show()
+```
+observations of ARDs among children under 5 display diverse trends across different countries, indicating significant variability in ARD prevalence globally. The first takeaway from this graph is the infection rates across the countries. We can classify them as follows - 
+
+
+High Infection Rates: Notable countries with high rates of ARD infections among children include Argentina (94.18%), Belarus (91.76%), Bosnia and Herzegovina (88.12%), Cuba (93.81%), Georgia (73.60%), Panama (81.63%), Serbia (91.3%), Ukraine (92.17%), Uruguay (89.9%), Mexico (72.77%), Thailand (82.28%) and Venezuela (72%). 
+
+
+Moderate to High Infection Rates: Additionally, countries like India (69.24%) and Indonesia (69.55%) show moderate to high rates of ARD infections among children. 
+
+
+Moderate Infection Rates: Many countries fall within the moderate range of ARD infections, such as Albania (67.03%), Armenia (42.46%), Bangladesh (34.52%), Brazil (49.73%), Colombia (61.19%), Kenya (56.86%), and Philippines (57.41%), among others. 
+
+
+Low Infection Rates: Some countries exhibit relatively lower rates of ARD infections among children, including Botswana (14.33%), Chad (20.63%), Somalia (17.72%), and Togo (34.56%), among others.
+
+
+This graph also allows us to draw a link between countries and infection rates. Examining acute respiratory disease (ARD) prevalence rates across countries unveils distinct regional patterns. Countries in sub-Saharan Africa, such as Angola, Benin, and Burkina Faso, showcase elevated ARD prevalence rates compared to other regions. This suggests common regional factors, including environmental conditions, healthcare infrastructure, and socio-economic status, contributing to this trend. Surprisingly, disparities emerge when correlating ARD prevalence rates with economic indicators. Higher-income countries like Argentina and Cuba demonstrate relatively higher ARD prevalence rates, while lower-income countries like Botswana and Somalia exhibit lower rates. This complex relationship challenges the assumption of a straightforward correlation between economic development and health outcomes. Furthermore, countries with robust healthcare infrastructure, such as Costa Rica and Thailand, coexist with high ARD prevalence rates, raising questions about healthcare access and quality. Environmental factors, including air quality and sanitation, also influence ARD prevalence rates, with countries like Bangladesh and India showing higher rates due to population density and pollution. Conversely, countries with better environmental conditions, like Bhutan and Mongolia, exhibit lower ARD prevalence rates. Additionally, socio-cultural factors and health behaviors play a significant role, as evidenced by variations in ARD prevalence rates between countries like Japan and South Korea, with high health literacy and vaccination coverage, and those like Afghanistan and Niger, with lower health literacy and limited healthcare access.
+
+Conclusion
+
+We can sum up by stating that this analysis highlights the intricate interactions between many factors that affect the prevalence rates of ARD in different nations. Although gender does not appear to be a key driver, geographical differences and variations in prevalence rates over time demonstrate the complex nature of the burden associated with ARD. These results highlight the necessity of focused public health initiatives that go beyond merely resolving economic inequality. Considering broader social, environmental, and healthcare-related issues is necessary to successfully reduce the global burden of ARDs in children.Addressing the root causes of ARD prevalence requires a holistic approach that considers the interconnectedness of factors such as environmental pollution, access to quality healthcare, socio-economic status, and cultural practices. For instance, in regions with poor air quality and inadequate sanitation, efforts to improve environmental conditions and promote hygiene practices can help reduce the incidence of ARDs. Similarly, investments in healthcare infrastructure, including access to vaccinations, diagnostic tools, and treatment services, are essential for early detection and management of ARDs. Furthermore, social determinants of health, such as education, income inequality, and housing conditions, play a crucial role in shaping ARD prevalence rates. Targeted interventions aimed at improving health literacy, reducing poverty, and providing safe living environments can contribute to long-term reductions in ARD burden. Additionally, promoting behavioral changes, such as smoking cessation and breastfeeding promotion, can further reduce the risk of ARDs among children. In conclusion, addressing the complex challenges associated with ARD prevalence requires a comprehensive approach that integrates interventions across multiple sectors. By addressing social, environmental, and healthcare-related factors in tandem, policymakers and public health practitioners can work towards achieving significant reductions in ARD burden and improving the overall health and well-being of children worldwide.
